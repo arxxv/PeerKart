@@ -1,3 +1,4 @@
 .env
 todo.txt
 /node_modules
+.gitignore

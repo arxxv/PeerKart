@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
   res.send("PeerKart™️");
 });
 
-const PORT = 3000 || process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 mongoose
   .connect(process.env.DB, {
@@ -29,6 +29,6 @@ mongoose
   })
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`Started on http://localhost:${PORT}`);
+      console.log(`Started on port ${PORT}`);
     });
   });

@@ -3,13 +3,24 @@ const User = require("../models/user");
 const { genError } = require("../utils/validError");
 const { validationResult } = require("express-validator");
 
+const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
+
 module.exports.getOrders = async (req, res) => {
+  let page = req.query.page;
+  if (!page) page = 1;
+  const totalOrders = await Order.countDocuments();
   const orders = await Order.find({ state: "active" })
+    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
+    .limit(MAX_ORDERS_PER_PAGE)
     .populate("generatedBy", { username: 1 })
     .populate("acceptedBy", { username: 1, contact: 1 })
     .populate("address")
     .populate("paymentMethod");
-  res.json({ data: orders });
+  res.json({
+    data: orders,
+    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
+    noOfOrders: orders.length,
+  });
 };
 
 module.exports.getOrder = async (req, res) => {

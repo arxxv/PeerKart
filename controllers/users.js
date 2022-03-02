@@ -2,6 +2,9 @@ const User = require("../models/user");
 const Order = require("../models/order");
 require("dotenv").config();
 const { validationResult } = require("express-validator");
+const { genError } = require("../utils/validError");
+
+const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getUsers = async (req, res) => {
   const errors = validationResult(req);
@@ -20,20 +23,40 @@ module.exports.getUser = async (req, res) => {
 
 module.exports.createdOrders = async (req, res) => {
   const id = req.user.id;
-  const orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
-    username: 1,
-    contact: 1,
-  });
+  let page = req.query.page;
+  if (!page) page = 1;
+  const totalOrders = await Order.countDocuments({ generatedBy: id });
+  const orders = await Order.find({ generatedBy: id })
+    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
+    .limit(MAX_ORDERS_PER_PAGE)
+    .populate("acceptedBy", {
+      username: 1,
+      contact: 1,
+    });
 
-  res.json({ data: orders });
+  res.json({
+    data: orders,
+    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
+    noOfOrders: orders.length,
+  });
 };
 
 module.exports.acceptedOrders = async (req, res) => {
   const id = req.user.id;
-  const orders = await Order.find({ acceptedBy: id }).populate("generatedBy", {
-    username: 1,
+  let page = req.query.page;
+  if (!page) page = 1;
+  const totalOrders = await Order.countDocuments({ acceptedBy: id });
+  const orders = await Order.find({ acceptedBy: id })
+    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
+    .limit(MAX_ORDERS_PER_PAGE)
+    .populate("generatedBy", {
+      username: 1,
+    });
+  res.json({
+    data: orders,
+    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
+    noOfOrders: orders.length,
   });
-  res.json({ data: orders });
 };
 
 module.exports.updateUser = async (req, res) => {
@@ -78,6 +101,9 @@ module.exports.updateUser = async (req, res) => {
 
 module.exports.activity = async (req, res) => {
   const id = req.user.id;
+  let page = req.query.page;
+  if (!page) page = 1;
+
   let orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
     username: 1,
     contact: 1,
@@ -92,5 +118,21 @@ module.exports.activity = async (req, res) => {
   orders = orders.sort((a, b) => {
     return new Date(b.updatedAt) - new Date(a.updatedAt);
   });
-  res.json({ data: orders });
+
+  const totalOrders = orders.length;
+  const maxPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+  // if (page > maxPages)
+  //   return res.status(403).json({
+  //     error: {
+  //       errors: [genError(page, "Page doesn't exist", "page", "query")],
+  //     },
+  //   });
+  const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+  orders = orders.slice(skip, skip + MAX_ORDERS_PER_PAGE);
+
+  res.json({
+    data: orders,
+    totalPages: maxPages,
+    noOfOrders: orders.length,
+  });
 };

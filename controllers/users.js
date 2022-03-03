@@ -3,18 +3,23 @@ const Order = require("../models/order");
 require("dotenv").config();
 const { validationResult } = require("express-validator");
 const { genError } = require("../utils/validError");
-
+const redisHelper = require("../utils/redisHelper");
 const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getUsers = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(422).json({ error: errors });
-  const users = await User.find();
+  const users = await redisHelper.checkCache("U", async () => {
+    return await User.find();
+  });
   res.json({ data: users });
 };
 
 module.exports.getUser = async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const id = req.user.id;
+  const user = await redisHelper.checkCache(`U:${id}`, async () => {
+    return await User.findById(id);
+  });
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ data: user });
 };
@@ -22,38 +27,59 @@ module.exports.getUser = async (req, res) => {
 module.exports.createdOrders = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
-  if (!page) page = 1;
-  const totalOrders = await Order.countDocuments({ generatedBy: id });
-  const orders = await Order.find({ generatedBy: id })
-    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
-    .limit(MAX_ORDERS_PER_PAGE)
-    .populate("acceptedBy", {
-      username: 1,
-      contact: 1,
-    });
-  res.json({
-    data: orders,
-    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
-    noOfOrders: orders.length,
+  if (!page || page < 1) page = 1;
+  const data = await redisHelper.checkCache(`U:${id}:C`, async () => {
+    const totalOrders = await Order.countDocuments({ generatedBy: id });
+    const orders = await Order.find({ generatedBy: id }).populate(
+      "acceptedBy",
+      {
+        username: 1,
+        contact: 1,
+      }
+    );
+
+    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+    if (page > totalPages) page = totalPages;
+    const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+    return {
+      data: orders.slice(
+        skip,
+        Math.max(skip + MAX_ORDERS_PER_PAGE, orders.length)
+      ),
+      totalPages,
+      noOfOrders: orders.length,
+    };
   });
+  res.json(data);
 };
 
 module.exports.acceptedOrders = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
-  if (!page) page = 1;
-  const totalOrders = await Order.countDocuments({ acceptedBy: id });
-  const orders = await Order.find({ acceptedBy: id })
-    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
-    .limit(MAX_ORDERS_PER_PAGE)
-    .populate("generatedBy", {
-      username: 1,
-    });
-  res.json({
-    data: orders,
-    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
-    noOfOrders: orders.length,
+  if (!page || page < 1) page = 1;
+
+  const data = await redisHelper.checkCache(`U:${id}:A`, async () => {
+    const totalOrders = await Order.countDocuments({ acceptedBy: id });
+    const orders = await Order.find({ acceptedBy: id }).populate(
+      "generatedBy",
+      {
+        username: 1,
+      }
+    );
+    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+    if (page > totalPages) page = totalPages;
+    const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+    return {
+      data: orders.slice(
+        skip,
+        Math.max(skip + MAX_ORDERS_PER_PAGE, orders.length)
+      ),
+      totalPages,
+      noOfOrders: orders.length,
+    };
   });
+
+  res.json(data);
 };
 
 module.exports.updateUser = async (req, res) => {
@@ -84,6 +110,10 @@ module.exports.updateUser = async (req, res) => {
       });
     user.paymentMethod.push(body.paymentMethod);
   }
+
+  await redisHelper.setCache(`U:${userid}`, user);
+  await redisHelper.deleteCache("U");
+
   try {
     await user.save();
   } catch (err) {
@@ -96,33 +126,33 @@ module.exports.updateUser = async (req, res) => {
 module.exports.activity = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
-  if (!page) page = 1;
-  let orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
-    username: 1,
-    contact: 1,
-  });
-  orders.push(
-    ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
+  if (!page || page < 1) page = 1;
+  const data = await redisHelper.checkCache(`U:${id}:H`, async () => {
+    let orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
       username: 1,
-    }))
-  );
-  orders = orders.sort((a, b) => {
-    return new Date(b.updatedAt) - new Date(a.updatedAt);
-  });
-  const totalOrders = orders.length;
-  const maxPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
-  // if (page > maxPages)
-  //   return res.status(403).json({
-  //     error: {
-  //       errors: [genError(page, "Page doesn't exist", "page", "query")],
-  //     },
-  //   });
-  const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
-  orders = orders.slice(skip, skip + MAX_ORDERS_PER_PAGE);
+      contact: 1,
+    });
+    orders.push(
+      ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
+        username: 1,
+      }))
+    );
+    orders = orders.sort((a, b) => {
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+    const totalOrders = orders.length;
+    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+    if (page > totalPages) page = totalPages;
 
-  res.json({
-    data: orders,
-    totalPages: maxPages,
-    noOfOrders: orders.length,
+    const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+    return {
+      data: orders.slice(
+        skip,
+        Math.max(skip + MAX_ORDERS_PER_PAGE, orders.length)
+      ),
+      totalPages,
+      noOfOrders: orders.length,
+    };
   });
+  res.json(data);
 };

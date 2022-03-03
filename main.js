@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
 require("dotenv").config();
+const Redis = require("redis");
 
 const userRouter = require("./routes/users");
 const orderRouter = require("./routes/orders");

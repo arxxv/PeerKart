@@ -39,9 +39,9 @@ module.exports.login = async (req, res) => {
       error: {
         errors: [
           genError(
-            "password",
+            "username/password",
             "Invalid username or password",
-            "password",
+            "username/password",
             "body"
           ),
         ],

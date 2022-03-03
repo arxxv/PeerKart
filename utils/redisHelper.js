@@ -1,15 +1,14 @@
 const Redis = require("redis");
+require("dotenv").config();
 const redisClient = Redis.createClient({
-  host: "redis-11538.c8.us-east-1-3.ec2.cloud.redislabs.com",
-  port: 11538,
+  host: process.env.REDISHOST,
+  port: process.env.PORT,
 });
 const DEF_EXP_TIME = 3600;
 
 module.exports.checkCache = async (key, cb) => {
   try {
-    console.log("hi");
     await redisClient.connect();
-    console.log("connected");
   } catch (error) {}
   return new Promise(async (resolve, reject) => {
     const data = await redisClient.get(key);

@@ -8,9 +8,7 @@ const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getUsers = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
-  }
+  if (!errors.isEmpty()) return res.status(422).json({ error: errors });
   const users = await User.find();
   res.json({ data: users });
 };
@@ -33,7 +31,6 @@ module.exports.createdOrders = async (req, res) => {
       username: 1,
       contact: 1,
     });
-
   res.json({
     data: orders,
     totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
@@ -62,9 +59,7 @@ module.exports.acceptedOrders = async (req, res) => {
 module.exports.updateUser = async (req, res) => {
   const userid = req.user.id;
   const body = req.body;
-
   let user = await User.findById(userid);
-
   if ("contact" in body) user.contact.push(body.contact);
   if ("address" in body) {
     if (!body.address?.address || body.address.address.trim().length === 0)
@@ -89,7 +84,6 @@ module.exports.updateUser = async (req, res) => {
       });
     user.paymentMethod.push(body.paymentMethod);
   }
-
   try {
     await user.save();
   } catch (err) {
@@ -103,22 +97,18 @@ module.exports.activity = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
   if (!page) page = 1;
-
   let orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
     username: 1,
     contact: 1,
   });
-
   orders.push(
     ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
       username: 1,
     }))
   );
-
   orders = orders.sort((a, b) => {
     return new Date(b.updatedAt) - new Date(a.updatedAt);
   });
-
   const totalOrders = orders.length;
   const maxPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
   // if (page > maxPages)

@@ -25,9 +25,7 @@ module.exports.getOrders = async (req, res) => {
 
 module.exports.getOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
-  }
+  if (!errors.isEmpty()) return res.status(422).json({ error: errors });
 
   const id = req.params.id;
   // get order
@@ -55,9 +53,7 @@ module.exports.getOrder = async (req, res) => {
 
 module.exports.addOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
-  }
+  if (!errors.isEmpty()) return res.status(422).json({ error: errors });
 
   const name = req.body.name;
   const items = req.body.items;
@@ -91,9 +87,8 @@ module.exports.addOrder = async (req, res) => {
 
 module.exports.acceptOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
-  }
+  if (!errors.isEmpty()) return res.status(422).json({ error: errors });
+
   const orderid = req.params.id;
   const userid = req.user.id;
   let order, user;
@@ -152,9 +147,8 @@ module.exports.acceptOrder = async (req, res) => {
 
 module.exports.rejectOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
-  }
+  if (!errors.isEmpty()) return res.status(422).json({ error: errors });
+
   const orderid = req.params.id;
   const userid = req.user.id;
   let order;

@@ -19,10 +19,13 @@
     "express-validator": "^6.14.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.2.1",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "redis": "^4.0.4"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
   },
-  "engines": {"node": "17.x"}
+  "engines": {
+    "node": "17.x"
+  }
 }

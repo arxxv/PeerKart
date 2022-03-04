@@ -22,38 +22,65 @@ module.exports.getUser = async (req, res) => {
 module.exports.createdOrders = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
-  if (!page) page = 1;
-  const totalOrders = await Order.countDocuments({ generatedBy: id });
-  const orders = await Order.find({ generatedBy: id })
-    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
-    .limit(MAX_ORDERS_PER_PAGE)
-    .populate("acceptedBy", {
-      username: 1,
-      contact: 1,
-    });
-  res.json({
-    data: orders,
-    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
-    noOfOrders: orders.length,
+  if (!page || page < 1) page = 1;
+  const data = await redisHelper.checkCache(`U:${id}:C`, async () => {
+    const totalOrders = await Order.countDocuments({ generatedBy: id });
+    const orders = await Order.find({ generatedBy: id }).populate(
+      "acceptedBy",
+      {
+        username: 1,
+        contact: 1,
+      }
+    );
+
+    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+    return {
+      data: orders,
+      totalPages,
+    };
   });
+  if (page > data.totalPages) page = data.totalPages;
+  const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+
+  data.data = data.data.slice(
+    skip,
+    Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
+  );
+  data.noOfOrders = data.data.length;
+
+  res.json(data);
 };
 
 module.exports.acceptedOrders = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
-  if (!page) page = 1;
-  const totalOrders = await Order.countDocuments({ acceptedBy: id });
-  const orders = await Order.find({ acceptedBy: id })
-    .skip((page - 1) * MAX_ORDERS_PER_PAGE)
-    .limit(MAX_ORDERS_PER_PAGE)
-    .populate("generatedBy", {
-      username: 1,
-    });
-  res.json({
-    data: orders,
-    totalPages: Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE),
-    noOfOrders: orders.length,
+  if (!page || page < 1) page = 1;
+
+  const data = await redisHelper.checkCache(`U:${id}:A`, async () => {
+    const totalOrders = await Order.countDocuments({ acceptedBy: id });
+    const orders = await Order.find({ acceptedBy: id }).populate(
+      "generatedBy",
+      {
+        username: 1,
+      }
+    );
+    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+    return {
+      data: orders,
+      totalPages,
+    };
   });
+  if (page > data.totalPages) page = data.totalPages;
+  const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+
+  data.data = data.data.slice(
+    skip,
+    Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
+  );
+  data.noOfOrders = data.data.length;
+
+  res.json(data);
+
 };
 
 module.exports.updateUser = async (req, res) => {
@@ -104,25 +131,32 @@ module.exports.activity = async (req, res) => {
   orders.push(
     ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
       username: 1,
-    }))
-  );
-  orders = orders.sort((a, b) => {
-    return new Date(b.updatedAt) - new Date(a.updatedAt);
+      contact: 1,
+    });
+    orders.push(
+      ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
+        username: 1,
+      }))
+    );
+    orders = orders.sort((a, b) => {
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+    const totalOrders = orders.length;
+    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+    return {
+      data: orders,
+      totalPages,
+    };
   });
-  const totalOrders = orders.length;
-  const maxPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
-  // if (page > maxPages)
-  //   return res.status(403).json({
-  //     error: {
-  //       errors: [genError(page, "Page doesn't exist", "page", "query")],
-  //     },
-  //   });
+  if (page > data.totalPages) page = data.totalPages;
   const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
-  orders = orders.slice(skip, skip + MAX_ORDERS_PER_PAGE);
 
-  res.json({
-    data: orders,
-    totalPages: maxPages,
-    noOfOrders: orders.length,
-  });
+  data.data = data.data.slice(
+    skip,
+    Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
+  );
+  data.noOfOrders = data.data.length;
+
+  res.json(data);
+
 };

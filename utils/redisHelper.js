@@ -1,16 +1,15 @@
 const Redis = require("redis");
 require("dotenv").config();
-const redisClient = Redis.createClient({
-  url: "redis://default:dES3m5mD2Y0OtLx6tdavzipFNzzl5JF1@redis-11538.c8.us-east-1-3.ec2.cloud.redislabs.com:11538",
-});
+const url = `redis://default:${process.env.REDISPASS}@${
+  process.env.REDISURI
+}:${parseInt(process.env.REDISPORT)}`;
+const redisClient = Redis.createClient({ url });
 const DEF_EXP_TIME = 3600;
 console.log(typeof process.env.REDISPORT);
 
 module.exports.checkCache = async (key, cb) => {
   try {
-    console.log("######");
     await redisClient.connect();
-    console.log("######");
     return new Promise(async (resolve, reject) => {
       const data = await redisClient.get(key);
       if (data) return resolve(JSON.parse(data));

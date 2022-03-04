@@ -132,7 +132,7 @@ module.exports.activity = async (req, res) => {
     ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
       username: 1,
       contact: 1,
-    });
+    })));
     orders.push(
       ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
         username: 1,

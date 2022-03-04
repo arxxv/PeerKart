@@ -17,17 +17,20 @@ module.exports.getOrders = async (req, res) => {
       .populate("address")
       .populate("paymentMethod");
     const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
-    if (page > totalPages) page = totalPages;
-    const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
     return {
-      data: orders.slice(
-        skip,
-        Math.max(skip + MAX_ORDERS_PER_PAGE, orders.length)
-      ),
+      data: orders,
       totalPages,
-      noOfOrders: orders.length,
     };
   });
+  if (page > data.totalPages) page = data.totalPages;
+  const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+
+  data.data = data.data.slice(
+    skip,
+    Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
+  );
+  data.noOfOrders = data.data.length;
+
   res.json(data);
 };
 

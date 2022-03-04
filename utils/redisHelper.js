@@ -5,11 +5,16 @@ const url = `redis://default:${process.env.REDISPASS}@${
 }:${parseInt(process.env.REDISPORT)}`;
 const redisClient = Redis.createClient({ url });
 const DEF_EXP_TIME = 3600;
-console.log(typeof process.env.REDISPORT);
+(async () => {
+  try {
+    await redisClient.connect();
+  } catch (error) {
+    console.log("err", error);
+  }
+})();
 
 module.exports.checkCache = async (key, cb) => {
   try {
-    await redisClient.connect();
     return new Promise(async (resolve, reject) => {
       const data = await redisClient.get(key);
       if (data) return resolve(JSON.parse(data));
@@ -26,14 +31,12 @@ module.exports.checkCache = async (key, cb) => {
 
 module.exports.setCache = async (key, data) => {
   try {
-    await redisClient.connect();
     await redisClient.set(key, JSON.stringify(data));
   } catch (error) {}
 };
 
 module.exports.deleteCache = async (key) => {
   try {
-    await redisClient.connect();
     await redisClient.del(key);
   } catch (error) {}
 };

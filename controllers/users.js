@@ -123,16 +123,12 @@ module.exports.updateUser = async (req, res) => {
 module.exports.activity = async (req, res) => {
   const id = req.user.id;
   let page = req.query.page;
-  if (!page) page = 1;
-  let orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
-    username: 1,
-    contact: 1,
-  });
-  orders.push(
-    ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
+  if (!page || page < 1) page = 1;
+  const data = await redisHelper.checkCache(`U:${id}:H`, async () => {
+    let orders = await Order.find({ generatedBy: id }).populate("acceptedBy", {
       username: 1,
       contact: 1,
-    })));
+    });
     orders.push(
       ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
         username: 1,
@@ -158,5 +154,4 @@ module.exports.activity = async (req, res) => {
   data.noOfOrders = data.data.length;
 
   res.json(data);
-
 };

@@ -42,7 +42,6 @@ router.post(
       }),
     body("username")
       .isLength({ min: 5 })
-      .withMessage("Username should be atleast 5 character long")
       .trim()
       .custom((value, { req }) => {
         return User.findOne({ username: value }).then((user) => {

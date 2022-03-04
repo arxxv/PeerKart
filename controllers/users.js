@@ -3,18 +3,23 @@ const Order = require("../models/order");
 require("dotenv").config();
 const { validationResult } = require("express-validator");
 const { genError } = require("../utils/validError");
-
+const redisHelper = require("../utils/redisHelper");
 const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getUsers = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(422).json({ error: errors });
-  const users = await User.find();
+  const users = await redisHelper.checkCache("U", async () => {
+    return await User.find();
+  });
   res.json({ data: users });
 };
 
 module.exports.getUser = async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const id = req.user.id;
+  const user = await redisHelper.checkCache(`U:${id}`, async () => {
+    return await User.findById(id);
+  });
   if (!user) return res.status(404).json({ error: "User not found" });
   res.json({ data: user });
 };
@@ -110,6 +115,10 @@ module.exports.updateUser = async (req, res) => {
       });
     user.paymentMethod.push(body.paymentMethod);
   }
+
+  await redisHelper.setCache(`U:${userid}`, user);
+  await redisHelper.deleteCache("U");
+
   try {
     await user.save();
   } catch (err) {

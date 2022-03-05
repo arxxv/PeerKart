@@ -1,8 +1,6 @@
 const Redis = require("redis");
 require("dotenv").config();
-const url = `redis://default:${process.env.REDISPASS}@${
-  process.env.REDISURI
-}:${parseInt(process.env.REDISPORT)}`;
+const url = process.env.REDISURL;
 const redisClient = Redis.createClient({ url });
 const DEF_EXP_TIME = 3600;
 (async () => {

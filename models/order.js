@@ -40,9 +40,17 @@ const OrderSchema = new Schema(
       type: Number,
     },
     address: {
-      address: {
-        type: String,
-        required: true,
+      address: { type: String, required: true },
+      location: {
+        type: {
+          type: String,
+          enum: ["Point"],
+        },
+        coordinates: {
+          type: [Number],
+          index: "2dsphere",
+        },
+        formattedAddress: String,
       },
     },
     paymentMethod: {

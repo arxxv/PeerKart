@@ -10,7 +10,18 @@ const UserSchema = new Schema({
   ],
   address: [
     {
-      address: { type: String },
+      address: { type: String, required: true },
+      location: {
+        type: {
+          type: String,
+          enum: ["Point"],
+        },
+        coordinates: {
+          type: [Number],
+          index: "2dsphere",
+        },
+        formattedAddress: String,
+      },
     },
   ],
   points: { type: Number, default: 0 },

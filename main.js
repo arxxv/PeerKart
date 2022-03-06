@@ -10,7 +10,7 @@ const orderRouter = require("./routes/orders");
 const authRouter = require("./routes/auth");
 
 const app = express();
-
+app.use(cors());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use("/api/v1/users", userRouter);

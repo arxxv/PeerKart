@@ -3,38 +3,70 @@ const User = require("../models/user");
 const { genError } = require("../utils/validError");
 const { validationResult } = require("express-validator");
 const redisHelper = require("../utils/redisHelper");
+const order = require("../models/order");
 const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getOrders = async (req, res) => {
+  const coordinates = req.body.coordinates;
   let page = req.query.page;
-  if (!page || page < 1) page = 1;
-  try {
-    const data = await redisHelper.checkCache("O", async () => {
-      const totalOrders = await Order.countDocuments();
-      const orders = await Order.find({ state: "active" })
-        .populate("generatedBy", { username: 1 })
-        .populate("acceptedBy", { username: 1, contact: 1 })
-        .populate("address")
-        .populate("paymentMethod");
+
+  if (coordinates) {
+    let maxRadius = 5000;
+    if (req.body.maxRadius) maxRadius = req.body.maxRadius;
+    try {
+      let orders = await Order.find({
+        "address.location": {
+          $near: {
+            $geometry: { type: "Point", coordinates: coordinates },
+            $maxDistance: maxRadius,
+          },
+        },
+      });
+      if (!page || page < 1) page = 1;
+      const totalOrders = orders.length;
       const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
-      return {
-        data: orders,
-        totalPages,
-      };
-    });
-    if (page > data.totalPages) page = data.totalPages;
-    const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+      if (page > totalPages) page = totalPages;
 
-    data.data = data.data.slice(
-      skip,
-      Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
-    );
-    data.noOfOrders = data.data.length;
+      const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+      orders = orders.slice(
+        skip,
+        Math.min(skip + MAX_ORDERS_PER_PAGE, orders.length)
+      );
+      return res.json({ data: orders, totalPages, noOfOrders: orders.length });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ error: "Server error" });
+    }
+  } else {
+    if (!page || page < 1) page = 1;
+    try {
+      const data = await redisHelper.checkCache("O", async () => {
+        const totalOrders = await Order.countDocuments();
+        const orders = await Order.find({ state: "active" })
+          .populate("generatedBy", { username: 1 })
+          .populate("acceptedBy", { username: 1, contact: 1 })
+          .populate("address")
+          .populate("paymentMethod");
+        const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+        return {
+          data: orders,
+          totalPages,
+        };
+      });
+      if (page > data.totalPages) page = data.totalPages;
+      const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
 
-    res.json(data);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+      data.data = data.data.slice(
+        skip,
+        Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
+      );
+      data.noOfOrders = data.data.length;
+
+      res.json(data);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Server error" });
+    }
   }
 };
 
@@ -63,7 +95,7 @@ module.exports.getOrder = async (req, res) => {
     res.json({ data: order });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -100,7 +132,7 @@ module.exports.addOrder = async (req, res) => {
     res.status(201).json({ data: saved });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server errgor" });
+    return res.status(500).json({ error: "Server error" });
   }
 };
 

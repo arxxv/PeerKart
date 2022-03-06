@@ -16,7 +16,7 @@ module.exports.getUsers = async (req, res) => {
     res.json({ data: users });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -30,7 +30,7 @@ module.exports.getUser = async (req, res) => {
     res.json({ data: user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -67,7 +67,7 @@ module.exports.createdOrders = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -103,7 +103,7 @@ module.exports.acceptedOrders = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -145,7 +145,7 @@ module.exports.updateUser = async (req, res) => {
     res.json({ data: user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -190,6 +190,6 @@ module.exports.activity = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server errgor" });
+    res.status(500).json({ error: "Server error" });
   }
 };

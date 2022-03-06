@@ -24,17 +24,24 @@ module.exports.checkCache = async (key, cb) => {
     });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Server errgor" });
   }
 };
 
 module.exports.setCache = async (key, data) => {
   try {
     await redisClient.set(key, JSON.stringify(data));
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server errgor" });
+  }
 };
 
 module.exports.deleteCache = async (key) => {
   try {
     await redisClient.del(key);
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server errgor" });
+  }
 };

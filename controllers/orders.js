@@ -7,30 +7,35 @@ const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getOrders = async (req, res) => {
   let page = req.query.page;
-  if (!page) page = 1;
-  const data = await redisHelper.checkCache("O", async () => {
-    const totalOrders = await Order.countDocuments();
-    const orders = await Order.find({ state: "active" })
-      .populate("generatedBy", { username: 1 })
-      .populate("acceptedBy", { username: 1, contact: 1 })
-      .populate("address")
-      .populate("paymentMethod");
-    const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
-    return {
-      data: orders,
-      totalPages,
-    };
-  });
-  if (page > data.totalPages) page = data.totalPages;
-  const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
+  if (!page || page < 1) page = 1;
+  try {
+    const data = await redisHelper.checkCache("O", async () => {
+      const totalOrders = await Order.countDocuments();
+      const orders = await Order.find({ state: "active" })
+        .populate("generatedBy", { username: 1 })
+        .populate("acceptedBy", { username: 1, contact: 1 })
+        .populate("address")
+        .populate("paymentMethod");
+      const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
+      return {
+        data: orders,
+        totalPages,
+      };
+    });
+    if (page > data.totalPages) page = data.totalPages;
+    const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
 
-  data.data = data.data.slice(
-    skip,
-    Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
-  );
-  data.noOfOrders = data.data.length;
+    data.data = data.data.slice(
+      skip,
+      Math.min(skip + MAX_ORDERS_PER_PAGE, data.data.length)
+    );
+    data.noOfOrders = data.data.length;
 
-  res.json(data);
+    res.json(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server errgor" });
+  }
 };
 
 module.exports.getOrder = async (req, res) => {
@@ -38,24 +43,28 @@ module.exports.getOrder = async (req, res) => {
   if (!errors.isEmpty()) return res.status(422).json({ error: errors });
   const id = req.params.id;
 
-  // get order
-  let order = await redisHelper.checkCache(`O:${id}`, async () => {
-    orderDetails = await Order.findById(id).populate("acceptedBy", {
-      username: 1,
-      contact: 1,
-    });
-    return orderDetails;
-  });
-
-  // order doesn't exists
-  if (!order)
-    return res.status(404).json({
-      error: {
-        errors: [genError(id, "Order doesn't exist.", "id", "body")],
-      },
+  try {
+    let order = await redisHelper.checkCache(`O:${id}`, async () => {
+      orderDetails = await Order.findById(id).populate("acceptedBy", {
+        username: 1,
+        contact: 1,
+      });
+      return orderDetails;
     });
 
-  res.json({ data: order });
+    // order doesn't exists
+    if (!order)
+      return res.status(404).json({
+        error: {
+          errors: [genError(id, "Order doesn't exist.", "id", "body")],
+        },
+      });
+
+    res.json({ data: order });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server errgor" });
+  }
 };
 
 module.exports.addOrder = async (req, res) => {
@@ -88,12 +97,11 @@ module.exports.addOrder = async (req, res) => {
     await redisHelper.deleteCache("O");
     await redisHelper.deleteCache(`U:${userid}:H`);
     await redisHelper.deleteCache(`U:${userid}:C`);
+    res.status(201).json({ data: saved });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: "Server errgor" });
   }
-
-  res.status(201).json({ data: saved });
 };
 
 module.exports.acceptOrder = async (req, res) => {
@@ -170,48 +178,33 @@ module.exports.rejectOrder = async (req, res) => {
 
   try {
     order = await Order.findById(orderid);
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: "Server error" });
-  }
-  if (!order)
-    return res.status(404).json({
-      error: {
-        errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-      },
-    });
+    if (!order)
+      return res.status(404).json({
+        error: {
+          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
+        },
+      });
+    if (order.state !== "accepted" || String(order.acceptedBy) !== userid)
+      return res.status(403).json({
+        error: {
+          errors: [
+            genError(orderid, "You cannot reject this order.", "id", "param"),
+          ],
+        },
+      });
+    order.acceptedBy = null;
+    order.state = "active";
 
-  // Check user
-  try {
-    user = await User.findById(userid);
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: "Server error" });
-  }
-
-  if (order.state !== "accepted" || String(order.acceptedBy) !== userid)
-    return res.status(403).json({
-      error: {
-        errors: [
-          genError(orderid, "You cannot reject this order.", "id", "param"),
-        ],
-      },
-    });
-
-  order.acceptedBy = null;
-  order.state = "active";
-  try {
     await order.save();
+    await redisHelper.setCache(`O:${orderid}`, order);
     await redisHelper.deleteCache("O");
     await redisHelper.deleteCache(`U:${userid}:H`);
     await redisHelper.deleteCache(`U:${userid}:A`);
-    await redisHelper.setCache(`O:${orderid}`, order);
+    res.json({ data: order });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: "Server error" });
   }
-
-  res.json({ data: order });
 };
 
 module.exports.deleteOrder = async (req, res) => {
@@ -220,42 +213,35 @@ module.exports.deleteOrder = async (req, res) => {
 
   const orderid = req.params.id;
   const userid = req.user.id;
-  let order, user;
+  let order;
 
   try {
     order = await Order.findById(orderid);
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: "Server error" });
-  }
-  if (!order)
-    return res.status(404).json({
-      error: {
-        errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-      },
-    });
+    if (!order)
+      return res.status(404).json({
+        error: {
+          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
+        },
+      });
 
-  if (order.state !== "active" || String(order.generatedBy) !== userid)
-    return res.status(403).json({
-      error: {
-        errors: [
-          genError(orderid, "You cannot delete this order.", "id", "param"),
-        ],
-      },
-    });
-
-  try {
+    if (order.state !== "active" || String(order.generatedBy) !== userid)
+      return res.status(403).json({
+        error: {
+          errors: [
+            genError(orderid, "You cannot delete this order.", "id", "param"),
+          ],
+        },
+      });
     await Order.findByIdAndDelete(orderid);
     await redisHelper.deleteCache("O");
     await redisHelper.deleteCache(`U:${userid}:H`);
     await redisHelper.deleteCache(`O:${orderid}`);
     await redisHelper.deleteCache(`U:${userid}:C`);
+    res.json({ data: order });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error" });
   }
-
-  res.json({ data: order });
 };
 
 module.exports.modifyOrder = async (req, res) => {
@@ -268,43 +254,36 @@ module.exports.modifyOrder = async (req, res) => {
 
   try {
     order = await Order.findById(orderid);
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: "Server error" });
-  }
-  if (!order)
-    return res.status(404).json({
-      error: {
-        errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-      },
-    });
+    if (!order)
+      return res.status(404).json({
+        error: {
+          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
+        },
+      });
 
-  if (order.state !== "active" || String(order.generatedBy) !== userid)
-    return res.status(403).json({
-      error: {
-        errors: [
-          genError(orderid, "You cannot modify this order.", "id", "param"),
-        ],
-      },
-    });
+    if (order.state !== "active" || String(order.generatedBy) !== userid)
+      return res.status(403).json({
+        error: {
+          errors: [
+            genError(orderid, "You cannot modify this order.", "id", "param"),
+          ],
+        },
+      });
 
-  order.name = req.body.name;
-  order.items = req.body.items;
-  order.category = req.body.category;
-  order.paymentMethod = req.body.paymentMethod;
-  order.address = req.body.address;
-  order.contact = req.body.contact;
-
-  try {
+    order.name = req.body.name;
+    order.items = req.body.items;
+    order.category = req.body.category;
+    order.paymentMethod = req.body.paymentMethod;
+    order.address = req.body.address;
+    order.contact = req.body.contact;
     await order.save();
     await redisHelper.deleteCache("O");
     await redisHelper.deleteCache(`U:${userid}:H`);
     await redisHelper.deleteCache(`U:${userid}:C`);
     await redisHelper.setCache(`O:${orderid}`);
+    res.json({ data: order });
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: "Server error" });
   }
-
-  res.json({ data: order });
 };

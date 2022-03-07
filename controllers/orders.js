@@ -3,24 +3,26 @@ const User = require("../models/user");
 const { genError } = require("../utils/validError");
 const { validationResult } = require("express-validator");
 const redisHelper = require("../utils/redisHelper");
-const order = require("../models/order");
 const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
 module.exports.getOrders = async (req, res) => {
   const coordinates = req.body.coordinates;
   let page = req.query.page;
+  const filters = req.body.filters;
 
   if (coordinates) {
     let maxRadius = 5000;
     if (req.body.maxRadius) maxRadius = req.body.maxRadius;
     try {
       let orders = await Order.find({
+        state: "active",
         "address.location": {
           $near: {
             $geometry: { type: "Point", coordinates: coordinates },
             $maxDistance: maxRadius,
           },
         },
+        ...filters,
       });
       if (!page || page < 1) page = 1;
       const totalOrders = orders.length;
@@ -42,7 +44,7 @@ module.exports.getOrders = async (req, res) => {
     try {
       const data = await redisHelper.checkCache("O", async () => {
         const totalOrders = await Order.countDocuments();
-        const orders = await Order.find({ state: "active" })
+        const orders = await Order.find({ state: "active", ...filters })
           .populate("generatedBy", { username: 1 })
           .populate("acceptedBy", { username: 1, contact: 1 })
           .populate("address")

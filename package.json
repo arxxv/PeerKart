@@ -23,7 +23,6 @@
     "redis": "^4.0.4"
   },
   "devDependencies": {
-    "axios": "^0.26.1",
     "nodemon": "^2.0.15"
   },
   "engines": {

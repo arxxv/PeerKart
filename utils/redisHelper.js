@@ -24,7 +24,7 @@ module.exports.checkCache = async (key, cb) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -33,7 +33,7 @@ module.exports.setCache = async (key, data) => {
     await redisClient.set(key, JSON.stringify(data));
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -42,6 +42,6 @@ module.exports.deleteCache = async (key) => {
     await redisClient.del(key);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };

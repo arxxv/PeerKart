@@ -10,14 +10,9 @@ module.exports.authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader?.split(" ")[1];
   if (token == null)
-    return res
-      .status(401)
-      .json({ error: { errors: [{ msg: "Unauthorized" }] } });
+    return res.status(401).json({ error: { msg: "Unauthorized" } });
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err)
-      return res
-        .status(403)
-        .json({ error: { errors: [{ msg: "Unauthorized" }] } });
+    if (err) return res.status(403).json({ error: { msg: "Unauthorized" } });
     req.user = user;
     next();
   });
@@ -29,23 +24,14 @@ module.exports.login = async (req, res) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors.array() });
+    return res.status(422).json({ error: errors.array()[0] });
   }
 
   let user = await User.findOne({ email: email });
   const check = await bcrypt.compare(password, user.password);
   if (!check) {
     return res.status(404).json({
-      error: {
-        errors: [
-          genError(
-            "username/password",
-            "Invalid username or password",
-            "username/password",
-            "body"
-          ),
-        ],
-      },
+      error: { msg: "Invalid username or password" },
     });
   }
 
@@ -73,7 +59,7 @@ module.exports.signup = async (req, res) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors.array() });
+    return res.status(422).json({ error: errors.array()[0] });
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);

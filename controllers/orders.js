@@ -37,7 +37,7 @@ module.exports.getOrders = async (req, res) => {
       return res.json({ data: orders, totalPages, noOfOrders: orders.length });
     } catch (error) {
       console.log(error);
-      return res.status(500).json({ error: "Server error" });
+      return res.status(500).json({ error: { msg: "Server error" } });
     }
   } else {
     if (!page || page < 1) page = 1;
@@ -67,14 +67,15 @@ module.exports.getOrders = async (req, res) => {
       res.json(data);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ error: "Server error" });
+      res.status(500).json({ error: { msg: "Server error" } });
     }
   }
 };
 
 module.exports.getOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ error: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
   const id = req.params.id;
 
   try {
@@ -89,21 +90,21 @@ module.exports.getOrder = async (req, res) => {
     // order doesn't exists
     if (!order)
       return res.status(404).json({
-        error: {
-          errors: [genError(id, "Order doesn't exist.", "id", "body")],
-        },
+        error: { msg: "Order doesn't exist." },
       });
 
     res.json({ data: order });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
 module.exports.addOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ error: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
+
   const userid = req.user.id;
   const name = req.body.name;
   const items = req.body.items;
@@ -134,13 +135,14 @@ module.exports.addOrder = async (req, res) => {
     res.status(201).json({ data: saved });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
 module.exports.acceptOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ error: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
 
   const orderid = req.params.id;
   const userid = req.user.id;
@@ -150,21 +152,15 @@ module.exports.acceptOrder = async (req, res) => {
     order = await Order.findById(orderid);
     if (!order)
       return res.status(404).json({
-        error: {
-          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-        },
+        error: { msg: "Order doesn't exist." },
       });
     if (order.state !== "active")
-      return res.status(403).json({
-        error: {
-          errors: [
-            genError(orderid, "Order isn't in active state.", "id", "param"),
-          ],
-        },
-      });
+      return res
+        .status(403)
+        .json({ error: { msg: "Order isn't in active state." } });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: { msg: "Server error" } });
   }
 
   try {
@@ -175,15 +171,11 @@ module.exports.acceptOrder = async (req, res) => {
       user.contact.length === 0
     )
       return res.status(403).json({
-        error: {
-          errors: [
-            genError(userid, "Complete your details first.", "id", "param"),
-          ],
-        },
+        error: { msg: "Complete your details first." },
       });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: { msg: "Server error" } });
   }
 
   order.acceptedBy = userid;
@@ -196,7 +188,7 @@ module.exports.acceptOrder = async (req, res) => {
     await redisHelper.setCache(`O:${orderid}`, order);
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: { msg: "Server error" } });
   }
 
   res.json({ data: order });
@@ -204,7 +196,8 @@ module.exports.acceptOrder = async (req, res) => {
 
 module.exports.rejectOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ error: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
 
   const orderid = req.params.id;
   const userid = req.user.id;
@@ -214,17 +207,11 @@ module.exports.rejectOrder = async (req, res) => {
     order = await Order.findById(orderid);
     if (!order)
       return res.status(404).json({
-        error: {
-          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-        },
+        error: { msg: "Order doesn't exist." },
       });
     if (order.state !== "accepted" || String(order.acceptedBy) !== userid)
       return res.status(403).json({
-        error: {
-          errors: [
-            genError(orderid, "You cannot reject this order.", "id", "param"),
-          ],
-        },
+        error: { msg: "You cannot reject this order." },
       });
     order.acceptedBy = null;
     order.state = "active";
@@ -237,13 +224,14 @@ module.exports.rejectOrder = async (req, res) => {
     res.json({ data: order });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
 module.exports.deleteOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ error: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
 
   const orderid = req.params.id;
   const userid = req.user.id;
@@ -253,18 +241,12 @@ module.exports.deleteOrder = async (req, res) => {
     order = await Order.findById(orderid);
     if (!order)
       return res.status(404).json({
-        error: {
-          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-        },
+        error: { msg: "Order doesn't exist." },
       });
 
     if (order.state !== "active" || String(order.generatedBy) !== userid)
       return res.status(403).json({
-        error: {
-          errors: [
-            genError(orderid, "You cannot delete this order.", "id", "param"),
-          ],
-        },
+        error: { msg: "You cannot delete this order." },
       });
     await Order.findByIdAndDelete(orderid);
     await redisHelper.deleteCache("O");
@@ -274,13 +256,14 @@ module.exports.deleteOrder = async (req, res) => {
     res.json({ data: order });
   } catch (err) {
     console.log(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
 module.exports.modifyOrder = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(422).json({ error: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
 
   const orderid = req.params.id;
   const userid = req.user.id;
@@ -290,18 +273,12 @@ module.exports.modifyOrder = async (req, res) => {
     order = await Order.findById(orderid);
     if (!order)
       return res.status(404).json({
-        error: {
-          errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-        },
+        error: { msg: "Order doesn't exist." },
       });
 
     if (order.state !== "active" || String(order.generatedBy) !== userid)
       return res.status(403).json({
-        error: {
-          errors: [
-            genError(orderid, "You cannot modify this order.", "id", "param"),
-          ],
-        },
+        error: { msg: "You cannot modify this order." },
       });
 
     order.name = req.body.name;
@@ -318,6 +295,6 @@ module.exports.modifyOrder = async (req, res) => {
     res.json({ data: order });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: { msg: "Server error" } });
   }
 };

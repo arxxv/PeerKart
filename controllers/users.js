@@ -16,7 +16,7 @@ module.exports.getUsers = async (req, res) => {
     res.json({ data: users });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -30,7 +30,7 @@ module.exports.getUser = async (req, res) => {
     res.json({ data: user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -67,7 +67,7 @@ module.exports.createdOrders = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -103,7 +103,7 @@ module.exports.acceptedOrders = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -117,9 +117,7 @@ module.exports.updateUser = async (req, res) => {
     if ("address" in body) {
       if (!body.address?.address || body.address.address.trim().length === 0)
         return res.status(403).json({
-          error: {
-            errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-          },
+          error: { msg: "Order doesn't exist." },
         });
       user.address.push(body.address);
     }
@@ -131,9 +129,7 @@ module.exports.updateUser = async (req, res) => {
         body.paymentMethod.paymentType.trim().length === 0
       )
         return res.status(403).json({
-          error: {
-            errors: [genError(orderid, "Order doesn't exist.", "id", "param")],
-          },
+          error: { msg: "Order doesn't exist." },
         });
       user.paymentMethod.push(body.paymentMethod);
     }
@@ -145,7 +141,7 @@ module.exports.updateUser = async (req, res) => {
     res.json({ data: user });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };
 
@@ -190,6 +186,6 @@ module.exports.activity = async (req, res) => {
     res.json(data);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: { msg: "Server error" } });
   }
 };

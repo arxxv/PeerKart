@@ -29,7 +29,7 @@ module.exports.login = async (req, res) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
+    return res.status(422).json({ error: errors.array() });
   }
 
   let user = await User.findOne({ email: email });
@@ -54,17 +54,15 @@ module.exports.login = async (req, res) => {
     process.env.ACCESS_TOKEN_SECRET
   );
 
-  res
-    .status(200)
-    .json({
-      token: accessToken,
-      username: user.username,
-      email: user.email,
-      contact: user.contact,
-      points: user.points,
-      paymentMethod: user.paymentMethod,
-      address: user.address,
-    });
+  res.status(200).json({
+    token: accessToken,
+    username: user.username,
+    email: user.email,
+    contact: user.contact,
+    points: user.points,
+    paymentMethod: user.paymentMethod,
+    address: user.address,
+  });
 };
 
 module.exports.signup = async (req, res) => {
@@ -75,7 +73,7 @@ module.exports.signup = async (req, res) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return res.status(422).json({ error: errors });
+    return res.status(422).json({ error: errors.array() });
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);

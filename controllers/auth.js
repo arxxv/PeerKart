@@ -49,9 +49,11 @@ module.exports.login = async (req, res) => {
     });
   }
 
-  user = { id: user._id };
-  const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
-  res.status(200).json({ token: accessToken });
+  const accessToken = jwt.sign(
+    { id: user._id, role: "user" },
+    process.env.ACCESS_TOKEN_SECRET
+  );
+  res.status(200).json({ token: accessToken, data: user });
 };
 
 module.exports.signup = async (req, res) => {

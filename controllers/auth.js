@@ -50,11 +50,21 @@ module.exports.login = async (req, res) => {
   }
 
   const accessToken = jwt.sign(
-    { id: user._id, role: "user" },
+    { id: user._id, role: 0 },
     process.env.ACCESS_TOKEN_SECRET
   );
-  delete user.password;
-  res.status(200).json({ token: accessToken, user });
+
+  res
+    .status(200)
+    .json({
+      token: accessToken,
+      username: user.username,
+      email: user.email,
+      contact: user.contact,
+      points: user.points,
+      paymentMethod: user.paymentMethod,
+      address: user.address,
+    });
 };
 
 module.exports.signup = async (req, res) => {

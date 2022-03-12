@@ -1,4 +1,5 @@
 const axios = require("axios").default;
+require("dotenv").config();
 
 exports.geocode = async (address) => {
   const options = {
@@ -11,7 +12,7 @@ exports.geocode = async (address) => {
     },
     headers: {
       "x-rapidapi-host": "forward-reverse-geocoding.p.rapidapi.com",
-      "x-rapidapi-key": "fd80e9f099mshdc19f0337fbe93ap128040jsnca3a1e8554b3",
+      "x-rapidapi-key": RAPIDKEY,
     },
   };
 

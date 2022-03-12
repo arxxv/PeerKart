@@ -54,7 +54,7 @@ module.exports.login = async (req, res) => {
     process.env.ACCESS_TOKEN_SECRET
   );
   delete user.password;
-  res.status(200).json({ token: accessToken, ...user });
+  res.status(200).json({ token: accessToken, user });
 };
 
 module.exports.signup = async (req, res) => {

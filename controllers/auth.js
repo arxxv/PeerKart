@@ -53,7 +53,8 @@ module.exports.login = async (req, res) => {
     { id: user._id, role: "user" },
     process.env.ACCESS_TOKEN_SECRET
   );
-  res.status(200).json({ token: accessToken, data: user });
+  delete user.password;
+  res.status(200).json({ token: accessToken, ...user });
 };
 
 module.exports.signup = async (req, res) => {

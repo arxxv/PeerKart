@@ -116,8 +116,8 @@ module.exports.updateUser = async (req, res) => {
     if ("contact" in body) user.contact.push(body.contact);
     if ("address" in body) {
       if (!body.address?.address || body.address.address.trim().length === 0)
-        return res.status(403).json({
-          error: { msg: "Order doesn't exist." },
+        return res.status(422).json({
+          error: { msg: "Invalid address." },
         });
       user.address.push(body.address);
     }

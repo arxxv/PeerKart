@@ -42,6 +42,7 @@ module.exports.login = async (req, res) => {
 
   res.status(200).json({
     token: accessToken,
+    id: user._id,
     username: user.username,
     email: user.email,
     contact: user.contact,

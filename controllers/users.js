@@ -27,7 +27,17 @@ module.exports.getUser = async (req, res) => {
       return await User.findById(id);
     });
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json({ data: user });
+    const userdata = {
+      token: accessToken,
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      contact: user.contact,
+      points: user.points,
+      paymentMethod: user.paymentMethod,
+      address: user.address,
+    };
+    res.json({ data: userdata });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: { msg: "Server error" } });
@@ -138,7 +148,17 @@ module.exports.updateUser = async (req, res) => {
     await redisHelper.deleteCache("U");
     await user.save();
 
-    res.json({ data: user });
+    const userdata = {
+      token: accessToken,
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      contact: user.contact,
+      points: user.points,
+      paymentMethod: user.paymentMethod,
+      address: user.address,
+    };
+    res.json({ data: userdata });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: { msg: "Server error" } });

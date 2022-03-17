@@ -12,7 +12,7 @@ exports.geocode = async (address) => {
     },
     headers: {
       "x-rapidapi-host": "forward-reverse-geocoding.p.rapidapi.com",
-      "x-rapidapi-key": RAPIDKEY,
+      "x-rapidapi-key": process.env.RAPIDKEY,
     },
   };
 

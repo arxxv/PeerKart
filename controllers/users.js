@@ -139,7 +139,7 @@ module.exports.updateUser = async (req, res) => {
         body.paymentMethod.paymentType.trim().length === 0
       )
         return res.status(403).json({
-          error: { msg: "Order doesn't exist." },
+          error: { msg: "Invalid payment method" },
         });
       user.paymentMethod.push(body.paymentMethod);
     }

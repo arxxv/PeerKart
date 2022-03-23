@@ -28,7 +28,7 @@ module.exports.getUser = async (req, res) => {
     });
     if (!user) return res.status(404).json({ error: "User not found" });
     const userdata = {
-      token: accessToken,
+      token: user.token,
       id: user._id,
       username: user.username,
       email: user.email,
@@ -149,7 +149,7 @@ module.exports.updateUser = async (req, res) => {
     await user.save();
 
     const userdata = {
-      token: accessToken,
+      token: user.token,
       id: user._id,
       username: user.username,
       email: user.email,

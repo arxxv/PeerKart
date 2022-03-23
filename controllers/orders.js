@@ -298,3 +298,62 @@ module.exports.modifyOrder = async (req, res) => {
     return res.status(500).json({ error: { msg: "Server error" } });
   }
 };
+
+module.exports.completeOrder = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty())
+    return res.status(422).json({ error: errors.array()[0] });
+
+  const orderid = req.params.id;
+  const userid = req.user.id;
+  let order;
+
+  try {
+    order = await Order.findById(orderid);
+    if (!order)
+      return res.status(404).json({
+        error: { msg: "Order doesn't exist." },
+      });
+    if (order.state !== "accepted") {
+      return res.status(403).json({
+        error: { msg: "Order isn't in accepted state" },
+      });
+    }
+    if (String(order.generatedBy) !== userid) {
+      return res.status(403).json({
+        error: { msg: "You are unauthorized" },
+      });
+    }
+
+    order.state = "complete";
+
+    User.findByIdAndUpdate(
+      order.acceptedBy,
+      {
+        $inc: { points: order.points },
+      },
+      (err) => {
+        if (err) console.log(err);
+      }
+    );
+
+    User.findByIdAndUpdate(
+      userid,
+      {
+        $inc: { points: -order.points },
+      },
+      (err) => {
+        if (err) console.log(err);
+      }
+    );
+
+    await order.save();
+    await redisHelper.setCache(`O:${orderid}`, order);
+    await redisHelper.deleteCache(`U:${userid}:H`);
+    await redisHelper.deleteCache(`U:${userid}:A`);
+    res.json({ data: order });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: { msg: "Server error" } });
+  }
+};

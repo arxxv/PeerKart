@@ -22,6 +22,9 @@ const OrderSchema = new Schema(
           type: Number,
           required: true,
         },
+        unit: {
+          type: String,
+        },
       },
     ],
     generatedBy: {

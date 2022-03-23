@@ -54,7 +54,6 @@ module.exports.login = async (req, res) => {
 
 module.exports.signup = async (req, res) => {
   const username = req.body.username;
-  console.log(username);
   const email = req.body.email;
   const password = req.body.password;
   const errors = validationResult(req);

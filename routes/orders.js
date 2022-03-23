@@ -56,6 +56,13 @@ router.put(
   orderController.rejectOrder
 );
 
+router.put(
+  "/:id/complete",
+  authController.authMiddleware,
+  [param("id", "Invalid order id").isMongoId()],
+  orderController.completeOrder
+);
+
 router.delete(
   "/:id",
   authController.authMiddleware,

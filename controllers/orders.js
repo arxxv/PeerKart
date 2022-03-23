@@ -316,7 +316,7 @@ module.exports.completeOrder = async (req, res) => {
       });
     if (order.state !== "accepted") {
       return res.status(403).json({
-        error: { msg: "Order isn't in accepted state" },
+        error: { msg: "Order isn't in accepted state." },
       });
     }
     if (String(order.generatedBy) !== userid) {

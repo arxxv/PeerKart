@@ -160,10 +160,11 @@ module.exports.acceptOrder = async (req, res) => {
 
   try {
     order = await Order.findById(orderid);
-    if (!order)
+    if (!order) {
       return res.status(404).json({
         error: { msg: "Order doesn't exist." },
       });
+    }
     if (order.state !== "active")
       return res
         .status(403)

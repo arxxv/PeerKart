@@ -82,7 +82,6 @@ module.exports.createdOrders = async (req, res) => {
 };
 
 module.exports.acceptedOrders = async (req, res) => {
-  console.log("QWERTYUJHCDSDFGN");
   const id = req.user.id;
   let page = req.query.page;
   if (!page || page < 1) page = 1;

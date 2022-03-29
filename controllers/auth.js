@@ -4,15 +4,13 @@ const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
 require("dotenv").config();
 
-const { genError } = require("../utils/validError");
-
 module.exports.authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader?.split(" ")[1];
   if (token == null)
-    return res.status(401).json({ error: { msg: "Unauthorized" } });
+    return res.status(401).json({ error: { msg: "UnauthorizedX" } });
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: { msg: "Unauthorized" } });
+    if (err) return res.status(403).json({ error: { msg: "UnauthorizedY" } });
     req.user = user;
     next();
   });

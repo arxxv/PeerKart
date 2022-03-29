@@ -43,13 +43,13 @@ module.exports.getOrders = async (req, res) => {
     if (!page || page < 1) page = 1;
     try {
       const data = await redisHelper.checkCache("O", async () => {
-        const totalOrders = await Order.countDocuments();
         const orders = await Order.find({ state: "active", ...filters })
           .populate("generatedBy", { username: 1 })
           .populate("acceptedBy", { username: 1, contact: 1 })
           .populate("address")
           .populate("paymentMethod")
           .sort({ updatedAt: -1 });
+        const totalOrders = orders.length;
         const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
         return {
           data: orders,

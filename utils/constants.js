@@ -1,1 +1,1 @@
-module.exports.MAX_ORDERS_PER_PAGE = 5;
+module.exports.MAX_ORDERS_PER_PAGE = 10;

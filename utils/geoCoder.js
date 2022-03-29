@@ -1,25 +1,11 @@
-const axios = require("axios").default;
-require("dotenv").config();
+const NodeGeocoder = require("node-geocoder");
 
-exports.geocode = async (address) => {
-  const options = {
-    method: "GET",
-    url: "https://forward-reverse-geocoding.p.rapidapi.com/v1/search",
-    params: {
-      q: address,
-      "accept-language": "en",
-      polygon_threshold: "0.0",
-    },
-    headers: {
-      "x-rapidapi-host": "forward-reverse-geocoding.p.rapidapi.com",
-      "x-rapidapi-key": process.env.RAPIDKEY,
-    },
-  };
-
-  try {
-    const data = await axios.request(options);
-    return data.data;
-  } catch (error) {
-    console.log(error);
-  }
+const options = {
+  provider: "google",
+  httpAdapter: "https",
+  apiKey: process.env.MAPKEY,
+  formatter: null,
 };
+
+const geocoder = NodeGeocoder(options);
+module.exports = geocoder;

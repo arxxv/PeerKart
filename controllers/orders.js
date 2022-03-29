@@ -1,9 +1,9 @@
 const Order = require("../models/order");
 const User = require("../models/user");
-const { genError } = require("../utils/validError");
 const { validationResult } = require("express-validator");
 const redisHelper = require("../utils/redisHelper");
 const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
+const geocoder = require("../utils/geoCoder");
 
 module.exports.getOrders = async (req, res) => {
   const coordinates = req.body.coordinates;
@@ -113,10 +113,14 @@ module.exports.addOrder = async (req, res) => {
   const address = req.body.address;
   const paymentMethod = req.body.paymentMethod;
   const contact = req.body.contact;
-  const points = items.length * 5; //FIXME: points
+  const points = items.length * 5;
 
   let saved;
   try {
+    let loc;
+    if (!req.body.address?.location?.coordinates) {
+      loc = await geocoder.geocode(address);
+    }
     const newOrder = new Order({
       name,
       category,
@@ -127,6 +131,12 @@ module.exports.addOrder = async (req, res) => {
       paymentMethod,
       contact,
     });
+    if (!req.body.address?.location?.coordinates) {
+      newOrder.address.location = {
+        type: "Point",
+        coordinates: [loc[0].longitude, loc[0].latitude],
+      };
+    }
     saved = await newOrder.save();
     await redisHelper.setCache(`O:${saved._id}`, newOrder);
     await redisHelper.deleteCache("O");

@@ -73,13 +73,4 @@ const OrderSchema = new Schema(
   { timestamps: true }
 );
 
-OrderSchema.pre("save", async function (next) {
-  const loc = await geocode(this.address.address);
-  this.address.location = {
-    type: "Point",
-    coordinates: [loc[0].lon, loc[0].lat],
-  };
-  next();
-});
-
 module.exports = mongoose.model("Order", OrderSchema);

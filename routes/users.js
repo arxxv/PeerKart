@@ -31,6 +31,12 @@ router.get(
   userController.acceptedOrders
 );
 
+router.get(
+  "/orders/latestaccepted",
+  authController.authMiddleware,
+  userController.lastAcceptedOrder
+);
+
 router.get("/activity", authController.authMiddleware, userController.activity);
 
 module.exports = router;

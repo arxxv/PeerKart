@@ -6,7 +6,6 @@ require("dotenv").config();
 
 module.exports.authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  console.log(authHeader);
   const token = authHeader?.split(" ")[1];
   if (token == null)
     return res.status(401).json({ error: { msg: "Unauthorized" } });

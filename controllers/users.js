@@ -209,3 +209,16 @@ module.exports.activity = async (req, res) => {
     res.status(500).json({ error: { msg: "Server error" } });
   }
 };
+
+module.exports.lastAcceptedOrder = async (req, res) => {
+  const id = req.user.id;
+  try {
+    const data = await Order.find({ acceptedBy: id })
+      .sort({ updatedAt: -1 })
+      .limit(1);
+    res.json({ data });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: { msg: "Server error" } });
+  }
+};

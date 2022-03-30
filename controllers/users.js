@@ -2,7 +2,6 @@ const User = require("../models/user");
 const Order = require("../models/order");
 require("dotenv").config();
 const { validationResult } = require("express-validator");
-const { genError } = require("../utils/validError");
 const redisHelper = require("../utils/redisHelper");
 const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 
@@ -215,7 +214,11 @@ module.exports.lastAcceptedOrder = async (req, res) => {
   try {
     const data = await Order.find({ acceptedBy: id })
       .sort({ updatedAt: -1 })
-      .limit(1);
+      .limit(1)
+      .populate("generatedBy", {
+        username: 1,
+        contact: 1,
+      });
     res.json({ data });
   } catch (error) {
     console.log(error);

@@ -3,7 +3,6 @@ const router = express.Router();
 const { param, body, check } = require("express-validator");
 const authController = require("../controllers/auth");
 const orderController = require("../controllers/orders");
-const user = require("../models/user");
 
 router.get("/", orderController.getOrders);
 

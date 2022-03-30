@@ -9,9 +9,9 @@ module.exports.authMiddleware = (req, res, next) => {
   console.log(authHeader);
   const token = authHeader?.split(" ")[1];
   if (token == null)
-    return res.status(401).json({ error: { msg: "UnauthorizedX" } });
+    return res.status(401).json({ error: { msg: "Unauthorized" } });
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: { msg: "UnauthorizedY" } });
+    if (err) return res.status(403).json({ error: { msg: "Unauthorized" } });
     req.user = user;
     next();
   });

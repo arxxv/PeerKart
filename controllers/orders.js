@@ -9,6 +9,7 @@ module.exports.getOrders = async (req, res) => {
   const coordinates = req.body.coordinates;
   let page = req.query.page;
   const filters = req.body.filters;
+  console.log(req.body);
 
   if (coordinates) {
     let maxRadius = 5000;

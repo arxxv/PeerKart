@@ -332,7 +332,7 @@ module.exports.completeOrder = async (req, res) => {
         error: { msg: "Order isn't in accepted state." },
       });
     }
-    if (String(order.generatedBy) !== userid) {
+    if (String(order.acceptedBy) !== userid) {
       return res.status(403).json({
         error: { msg: "You are unauthorized" },
       });

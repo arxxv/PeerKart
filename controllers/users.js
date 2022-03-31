@@ -92,6 +92,7 @@ module.exports.acceptedOrders = async (req, res) => {
         "generatedBy",
         {
           username: 1,
+          contact: 1,
         }
       );
       const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
@@ -181,6 +182,7 @@ module.exports.activity = async (req, res) => {
       orders.push(
         ...(await Order.find({ acceptedBy: id }).populate("generatedBy", {
           username: 1,
+          contact: 1,
         }))
       );
       orders = orders.sort((a, b) => {

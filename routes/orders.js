@@ -24,7 +24,12 @@ router.post(
       .trim()
       .toLowerCase()
       .custom((value, { req }) => {
-        const categories = ["grocery", "health", "meat", "stationary"];
+        const categories = [
+          "Grocery",
+          "Medicines",
+          "Fish and Meat",
+          "Stationary",
+        ];
         if (!categories.includes(value)) {
           throw new Error("Invalid category");
         }

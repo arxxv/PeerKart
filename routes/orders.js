@@ -22,7 +22,6 @@ router.post(
     body("items").isArray({ min: 1 }),
     body("category")
       .trim()
-      .toLowerCase()
       .custom((value, { req }) => {
         const categories = [
           "Grocery",

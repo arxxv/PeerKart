@@ -24,7 +24,7 @@ module.exports.getOrders = async (req, res) => {
           },
         },
         ...filters,
-      }).sort({ updatedAt: -1 });
+      });
       if (!page || page < 1) page = 1;
       const totalOrders = orders.length;
       const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);

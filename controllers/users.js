@@ -212,7 +212,7 @@ module.exports.activity = async (req, res) => {
 module.exports.lastAcceptedOrder = async (req, res) => {
   const id = req.user.id;
   try {
-    const data = await Order.find({ acceptedBy: id })
+    const data = await Order.find({ acceptedBy: id, state: "accepted" })
       .sort({ updatedAt: -1 })
       .limit(1)
       .populate("generatedBy", {

@@ -175,6 +175,13 @@ module.exports.acceptOrder = async (req, res) => {
     console.log(err);
     return res.status(500).json({ error: { msg: "Server error" } });
   }
+  console.log(String(order.generatedBy), userid);
+
+  if (String(order.generatedBy) === userid) {
+    return res
+      .status(403)
+      .json({ error: { msg: "You cannot accept this order" } });
+  }
 
   try {
     user = await User.findById(userid);

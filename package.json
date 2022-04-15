@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node main.js",
-    "dev": "nodemon main.js"
+    "dev": "nodemon main.js",
+    "test": "mocha"
   },
   "keywords": [],
   "author": "Arnav Shindolkar",
@@ -25,7 +26,15 @@
     "redis": "^4.0.4"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "@babel/cli": "^7.17.6",
+    "@babel/core": "^7.17.9",
+    "@babel/node": "^7.16.8",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/register": "^7.17.7",
+    "chai": "^4.3.6",
+    "mocha": "^9.2.2",
+    "nodemon": "^2.0.15",
+    "supertest": "^6.2.2"
   },
   "engines": {
     "node": "17.x"

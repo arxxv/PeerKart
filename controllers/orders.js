@@ -341,7 +341,7 @@ module.exports.completeOrder = async (req, res) => {
     }
     if (String(order.acceptedBy) !== userid) {
       return res.status(403).json({
-        error: { msg: "You are unauthorized" },
+        error: { msg: "Forbidden" },
       });
     }
 

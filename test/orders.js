@@ -1,5 +1,5 @@
 import supertest from "supertest";
-const request = supertest("https://peerkart-bee.herokuapp.com/api/v1/");
+const request = supertest("http://localhost:3000/api/v1/");
 import { expect } from "chai";
 
 let newUser = {
@@ -59,7 +59,7 @@ const randomString = () => {
 };
 
 describe("Auth", () => {
-  it("POST /signup with same email/username", () => {
+  it("POST /signup with existing email/username", () => {
     return request
       .post("auth/signup")
       .send(newUser)
@@ -87,7 +87,7 @@ describe("Auth", () => {
       });
   });
 
-  it("POST /login invalid creds", () => {
+  it("POST /login with invalid creds", () => {
     return request
       .post("auth/login")
       .send({
@@ -130,6 +130,7 @@ describe("Orders & Users", () => {
         expect(res.body.data).to.have.own.property("points");
         expect(res.body.data).to.have.own.property("paymentMethod");
         expect(res.body.data).to.have.own.property("address");
+        res.body.data.token = newUser.token;
         newUser = res.body.data;
       });
   });
@@ -143,6 +144,7 @@ describe("Orders & Users", () => {
         expect(res.body.data.address).to.have.lengthOf(1);
         expect(res.body.data.paymentMethod).to.have.lengthOf(1);
         expect(res.body.data.contact).to.have.lengthOf(1);
+        res.body.data.token = newUser.token;
         newUser = res.body.data;
       });
   });
@@ -242,7 +244,7 @@ describe("Orders & Users", () => {
 
   it("PUT /orders/:id/accept myorder myself", () => {
     return request
-      .put(`orders/${newOrder.id}/accept`)
+      .put(`orders/${newOrder._id}/accept`)
       .set({ Authorization: `Bearer ${newUser.token}` })
       .then((res) => {
         expect(res.body).to.deep.include({
@@ -255,7 +257,7 @@ describe("Orders & Users", () => {
 
   it("PUT /orders/:id/accept some other order", () => {
     return request
-      .put(`orders/62593d4ed692e7cd7c59f0b3/accept`)
+      .put(`orders/625948b8b6e864dc1f89c620/accept`)
       .set({ Authorization: `Bearer ${newUser.token}` })
       .then((res) => {
         expect(res.body.data.state).to.be.eq("accepted");
@@ -264,19 +266,9 @@ describe("Orders & Users", () => {
       });
   });
 
-  it("GET /users/orders/accepted", () => {
-    return request
-      .get("users/orders/accepted")
-      .set({ Authorization: `Bearer ${newUser.token}` })
-      .then((res) => {
-        expect(res.body.data).to.have.lengthOf(1);
-        expect(res.body.data).to.deep.include(newAcceptedOrder);
-      });
-  });
-
   it("PUT /orders/:id/reject the same order", () => {
     return request
-      .put(`orders/62593d4ed692e7cd7c59f0b3/reject`)
+      .put(`orders/625948b8b6e864dc1f89c620/reject`)
       .set({ Authorization: `Bearer ${newUser.token}` })
       .then((res) => {
         expect(res.body.data.state).to.be.eq("active");
@@ -314,7 +306,7 @@ describe("Orders & Users", () => {
     return request
       .put(`orders/${newOrder2._id}/complete`)
       .set({
-        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYyNTkyY2Y3NTg2NTA3NjljYmU1NDFhZiIsInJvbGUiOjAsImlhdCI6MTY1MDAxNTE2NX0.yQxerV8CtZuzZ5_1IDjW3_9x9rCB8Xpsr62gDG-k-4A`,
+        Authorization: `Bearer ${newUser.token}`,
       })
       .then((res) => {
         expect(res.body.data.state).to.be.eq("complete");

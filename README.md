@@ -12,5 +12,5 @@ MongoDB was the primary database for the app while
 I used Redis for caching so that requests can be a little bit faster. 
 For filtering the orders based on proximity, I have used Google Maps API along with geoJSON support on MongoDB.
 
-The [web-app](https://github.com/Arsh-ak7/peerkart-frontend) was built using React Framework while the [android app](https://github.com/Arsh-ak7/peerkartandroid/) was built using React-Native 
+The [web-app](https://github.com/Arsh-ak7/peerkart-frontend) was built using React Framework while the [android-app](https://github.com/Arsh-ak7/peerkartandroid/) was built using React-Native, by my friends
  

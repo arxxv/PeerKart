@@ -1,6 +1,4 @@
 # Peerkart
-
-## What is it?
 Peerkart is an android app and web-app that allows users to put their grocery orders on the app and allows the creator to 
 create, modify, delete, their orders. Other users who are willing can then deliver these orders where proximity filtered 
 orders are shown to them, and earn some incentives. The app also allows filtering based on category, number of items, etc.

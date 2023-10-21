@@ -6,42 +6,35 @@ const MAX_ORDERS_PER_PAGE = require("../utils/constants").MAX_ORDERS_PER_PAGE;
 const geocoder = require("../utils/geoCoder");
 
 module.exports.getOrders = async (req, res) => {
-  const coordinates = req.body.coordinates;
-  let page = req.query.page;
-  const filters = req.body.filters;
-  console.log(req.body);
-
+  const { coordinates, filters, maxRadius } = req.body;
+  let { page, pageSize } = req.query;
+  if (!pageSize) {
+    pageSize = MAX_ORDERS_PER_PAGE;
+  }
+  const skip = (page - 1) * pageSize;
   if (coordinates) {
-    let maxRadius = 5000;
-    if (req.body.maxRadius) maxRadius = req.body.maxRadius;
     try {
-      let orders = await Order.find({
-        state: "active",
-        "address.location": {
+      const radius = maxRadius ? maxRadius : 5000;
+      const findQuery = {
+        state: 'active',
+        'address.location': {
           $near: {
-            $geometry: { type: "Point", coordinates: coordinates },
-            $maxDistance: maxRadius,
+            $geometry: { type: 'Point', coordinates: coordinates },
+            $maxDistance: radius,
           },
         },
         ...filters,
-      });
-      if (!page || page < 1) page = 1;
-      const totalOrders = orders.length;
-      const totalPages = Math.ceil(totalOrders / MAX_ORDERS_PER_PAGE);
-      if (page > totalPages) page = totalPages;
-
-      const skip = (page - 1) * MAX_ORDERS_PER_PAGE;
-      orders = orders.slice(
-        skip,
-        Math.min(skip + MAX_ORDERS_PER_PAGE, orders.length)
-      );
+      };
+      let orders = await Order.find(findQuery)
+        .skip(skip)
+        .limit(pageSize)
+        .lean();
       return res.json({ data: orders, totalPages, noOfOrders: orders.length });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ error: { msg: "Server error" } });
     }
   } else {
-    if (!page || page < 1) page = 1;
     try {
       const data = await redisHelper.checkCache("O", async () => {
         const orders = await Order.find({ state: "active", ...filters })
